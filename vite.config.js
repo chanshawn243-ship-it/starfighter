@@ -3,10 +3,26 @@ import { defineConfig } from 'vite';
 export default defineConfig({
   build: {
     outDir: 'dist',
-    assetsDir: 'assets'
+    assetsDir: 'assets',
+    target: 'es2020',
+    minify: 'terser',
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'three': ['three']
+        }
+      }
+    }
   },
   server: {
     port: 3000,
-    open: true
+    open: true,
+    middlewareMode: false
+  },
+  resolve: {
+    alias: {
+      'three': 'three'
+    }
   }
 });
