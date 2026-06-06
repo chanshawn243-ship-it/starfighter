@@ -18,7 +18,7 @@
             overflow: hidden;
         }
 
-        #canvas {
+        canvas {
             display: block;
             width: 100%;
             height: 100vh;
@@ -72,42 +72,47 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.9);
-            border: 2px solid #0f0;
+            background: rgba(0, 0, 0, 0.95);
+            border: 3px solid #0f0;
             padding: 40px;
             text-align: center;
             z-index: 1000;
-            min-width: 400px;
+            min-width: 450px;
             font-family: 'Courier New', monospace;
+            box-shadow: 0 0 30px #0f0;
         }
 
         #menu h1 {
-            font-size: 36px;
-            margin-bottom: 30px;
-            text-shadow: 0 0 20px #0f0;
+            font-size: 42px;
+            margin-bottom: 20px;
+            text-shadow: 0 0 30px #0f0;
+            letter-spacing: 3px;
         }
 
         #menu p {
             font-size: 14px;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             color: #888;
         }
 
         #startBtn {
             background: #0f0;
             color: #000;
-            border: none;
-            padding: 15px 40px;
+            border: 2px solid #0f0;
+            padding: 15px 50px;
             font-size: 18px;
             cursor: pointer;
             font-weight: bold;
             transition: all 0.3s;
-            margin-top: 20px;
+            margin-top: 30px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
         }
 
         #startBtn:hover {
-            background: #00ff00;
-            box-shadow: 0 0 20px #0f0;
+            background: #000;
+            color: #0f0;
+            box-shadow: 0 0 30px #0f0, inset 0 0 10px #0f0;
         }
 
         #pauseMenu {
@@ -116,57 +121,64 @@
             left: 50%;
             transform: translate(-50%, -50%);
             background: rgba(0, 0, 0, 0.95);
-            border: 2px solid #0f0;
+            border: 3px solid #0f0;
             padding: 40px;
             text-align: center;
             z-index: 2000;
             display: none;
             font-family: 'Courier New', monospace;
+            box-shadow: 0 0 30px #0f0;
         }
 
         #pauseMenu h2 {
-            font-size: 28px;
-            margin-bottom: 20px;
-            text-shadow: 0 0 20px #0f0;
+            font-size: 32px;
+            margin-bottom: 30px;
+            text-shadow: 0 0 30px #0f0;
         }
 
         #pauseMenu button {
             background: #0f0;
             color: #000;
-            border: none;
+            border: 2px solid #0f0;
             padding: 12px 30px;
             font-size: 16px;
             cursor: pointer;
             font-weight: bold;
             margin: 10px;
             transition: all 0.3s;
+            text-transform: uppercase;
         }
 
         #pauseMenu button:hover {
-            background: #00ff00;
-            box-shadow: 0 0 15px #0f0;
+            background: #000;
+            color: #0f0;
+            box-shadow: 0 0 20px #0f0;
         }
 
         .hidden {
-            display: none;
+            display: none !important;
+        }
+
+        .controls-text {
+            font-size: 12px;
+            margin-top: 20px;
+            line-height: 1.6;
         }
     </style>
 </head>
 <body>
-    <canvas id="canvas"></canvas>
-
     <div id="menu">
         <h1>⚔ TIE DEFENDER ⚔</h1>
         <p>SPACE COMBAT SIMULATOR</p>
-        <p style="font-size: 12px; margin-top: 20px;">
-            WASD - Move | MOUSE - Look | CLICK - Fire<br>
-            SPACE - Boost | P - Pause
-        </p>
+        <div class="controls-text">
+            <div>ARROW KEYS / WASD - Move | Q/E - Up/Down</div>
+            <div>CLICK - Fire | SPACE - Boost | P - Pause</div>
+        </div>
         <button id="startBtn">START GAME</button>
     </div>
 
     <div id="pauseMenu">
-        <h2>PAUSED</h2>
+        <h2>⏸ PAUSED ⏸</h2>
         <button id="resumeBtn">RESUME</button>
         <button id="menuBtn">MAIN MENU</button>
     </div>
@@ -178,7 +190,7 @@
     </div>
 
     <div id="stats">
-        <div>TARGETS ELIMINATED: <span id="killCount">0</span></div>
+        <div>TARGETS: <span id="killCount">0</span></div>
         <div>ACCURACY: <span id="accuracy">0</span>%</div>
         <div>DISTANCE: <span id="distance">0</span>m</div>
     </div>
