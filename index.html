@@ -32,6 +32,7 @@
             font-family: 'Courier New', monospace;
             text-shadow: 0 0 10px #0f0;
             z-index: 100;
+            line-height: 1.8;
         }
 
         #stats {
@@ -43,6 +44,7 @@
             text-shadow: 0 0 10px #0f0;
             z-index: 100;
             text-align: right;
+            line-height: 1.8;
         }
 
         #crosshair {
@@ -59,12 +61,18 @@
 
         .crosshair-center {
             position: absolute;
-            width: 2px;
-            height: 2px;
+            width: 3px;
+            height: 3px;
             background: #0f0;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
+            box-shadow: 0 0 10px #0f0;
+        }
+
+        .crosshair-line {
+            position: absolute;
+            background: #0f0;
         }
 
         #menu {
@@ -77,16 +85,16 @@
             padding: 40px;
             text-align: center;
             z-index: 1000;
-            min-width: 450px;
+            min-width: 500px;
             font-family: 'Courier New', monospace;
-            box-shadow: 0 0 30px #0f0;
+            box-shadow: 0 0 30px #0f0, inset 0 0 10px rgba(0, 255, 0, 0.1);
         }
 
         #menu h1 {
-            font-size: 42px;
+            font-size: 48px;
             margin-bottom: 20px;
-            text-shadow: 0 0 30px #0f0;
-            letter-spacing: 3px;
+            text-shadow: 0 0 30px #0f0, 0 0 60px #00aa00;
+            letter-spacing: 4px;
         }
 
         #menu p {
@@ -162,7 +170,22 @@
         .controls-text {
             font-size: 12px;
             margin-top: 20px;
-            line-height: 1.6;
+            line-height: 1.8;
+        }
+
+        #fireMode {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            font-size: 13px;
+            font-family: 'Courier New', monospace;
+            text-shadow: 0 0 10px #0f0;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { text-shadow: 0 0 10px #0f0; }
+            50% { text-shadow: 0 0 20px #0f0, 0 0 40px #00ff00; }
         }
     </style>
 </head>
@@ -171,8 +194,11 @@
         <h1>⚔ TIE DEFENDER ⚔</h1>
         <p>SPACE COMBAT SIMULATOR</p>
         <div class="controls-text">
-            <div>ARROW KEYS / WASD - Move | Q/E - Up/Down</div>
-            <div>CLICK - Fire | SPACE - Boost | P - Pause</div>
+            <div><strong>MOVEMENT:</strong> ARROW KEYS / WASD</div>
+            <div><strong>VERTICAL:</strong> Q / E</div>
+            <div><strong>AIM:</strong> MOUSE MOVE</strong></div>
+            <div><strong style="color: #00ff00; text-shadow: 0 0 20px #0f0;">⚡ FIRE: CLICK or SPACEBAR ⚡</strong></div>
+            <div><strong>PAUSE:</strong> P</div>
         </div>
         <button id="startBtn">START GAME</button>
     </div>
@@ -184,20 +210,24 @@
     </div>
 
     <div id="hud">
-        <div>THREAT LEVEL: <span id="threatLevel">--</span></div>
-        <div>SHIELD: <span id="shield">100</span>%</div>
-        <div>WEAPONS: <span id="weapons">ONLINE</span></div>
+        <div>⚠ THREAT LEVEL: <span id="threatLevel">--</span></div>
+        <div>🛡 SHIELD: <span id="shield">100</span>%</div>
+        <div>💥 WEAPONS: <span id="weapons">ONLINE</span></div>
+        <div>👾 ENEMIES: <span id="enemies">8</span></div>
     </div>
 
     <div id="stats">
-        <div>TARGETS: <span id="killCount">0</span></div>
-        <div>ACCURACY: <span id="accuracy">0</span>%</div>
-        <div>DISTANCE: <span id="distance">0</span>m</div>
+        <div>💣 TARGETS HIT: <span id="killCount">0</span></div>
+        <div>🎯 ACCURACY: <span id="accuracy">0</span>%</div>
+        <div>📡 DISTANCE: <span id="distance">0</span>m</div>
+        <div>💫 SHOTS: <span id="ammo">∞</span></div>
     </div>
 
     <div id="crosshair">
         <div class="crosshair-center"></div>
     </div>
+
+    <div id="fireMode">🔴 WEAPONS ARMED</div>
 
     <script type="module" src="src/main.js"></script>
 </body>

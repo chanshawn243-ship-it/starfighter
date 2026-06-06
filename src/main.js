@@ -3,7 +3,12 @@ import * as THREE from 'three';
 let scene, camera, renderer, gameRunning = false, gamePaused = false;
 let particles = [];
 let playerPos = { x: 0, y: 0, z: 0 };
+let playerRotation = { x: 0, y: 0 };
 let enemies = [];
+let projectiles = [];
+let stats = { kills: 0, shots: 0, hits: 0 };
+let shootCooldown = 0;
+const maxShootCooldown = 100; // ms between shots
 
 function init() {
     // Scene Setup
@@ -59,10 +64,37 @@ function init() {
     document.addEventListener('keydown', (e) => {
         keys[e.key.toLowerCase()] = true;
         keys[e.key] = true;
+
+        // Spacebar to shoot
+        if (e.code === 'Space' && gameRunning && !gamePaused) {
+            e.preventDefault();
+            fireProjectile();
+        }
     });
     document.addEventListener('keyup', (e) => {
         keys[e.key.toLowerCase()] = false;
         keys[e.key] = false;
+    });
+
+    // Mouse click to shoot
+    document.addEventListener('click', () => {
+        if (gameRunning && !gamePaused) {
+            fireProjectile();
+        }
+    });
+
+    // Mouse move for camera aiming
+    document.addEventListener('mousemove', (e) => {
+        if (gameRunning && !gamePaused) {
+            const deltaX = e.movementX;
+            const deltaY = e.movementY;
+
+            playerRotation.y += deltaX * 0.002;
+            playerRotation.x -= deltaY * 0.002;
+
+            // Clamp vertical rotation
+            playerRotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, playerRotation.x));
+        }
     });
 
     // Store keys for update loop
@@ -176,6 +208,32 @@ function createPlayerShip() {
     engineLight.position.z = -2.5;
     group.add(engineLight);
 
+    // Weapon cannons
+    const cannonMat = new THREE.MeshPhongMaterial({
+        color: 0x666666,
+        shininess: 120
+    });
+
+    // Left cannon
+    const cannon1 = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.08, 0.08, 0.6, 8),
+        cannonMat
+    );
+    cannon1.position.set(-0.5, 0.2, 0.5);
+    cannon1.rotation.z = Math.PI / 6;
+    cannon1.castShadow = true;
+    group.add(cannon1);
+
+    // Right cannon
+    const cannon2 = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.08, 0.08, 0.6, 8),
+        cannonMat
+    );
+    cannon2.position.set(0.5, 0.2, 0.5);
+    cannon2.rotation.z = -Math.PI / 6;
+    cannon2.castShadow = true;
+    group.add(cannon2);
+
     group.position.copy(playerPos);
     group.scale.set(1.5, 1.5, 1.5);
     scene.add(group);
@@ -215,8 +273,200 @@ function createEnemies() {
             vx: (Math.random() - 0.5) * 30,
             vy: (Math.random() - 0.5) * 10,
             vz: (Math.random() - 0.5) * 30,
-            targetChangeTimer: 0
+            targetChangeTimer: 0,
+            health: 100,
+            maxHealth: 100
         });
+    }
+}
+
+function fireProjectile() {
+    if (shootCooldown > 0) return;
+
+    // Calculate fire direction based on camera rotation
+    const direction = new THREE.Vector3(0, 0, -1);
+    direction.applyAxisAngle(new THREE.Vector3(1, 0, 0), playerRotation.x);
+    direction.applyAxisAngle(new THREE.Vector3(0, 1, 0), playerRotation.y);
+    direction.normalize();
+
+    // Fire position (from player location)
+    const firePos = new THREE.Vector3(
+        playerPos.x,
+        playerPos.y,
+        playerPos.z
+    );
+
+    // Create projectile
+    const projectile = {
+        pos: firePos.clone(),
+        direction: direction.clone(),
+        speed: 200,
+        life: 10000, // 10 seconds
+        age: 0,
+        mesh: null,
+        trail: []
+    };
+
+    // Create projectile mesh
+    const geometry = new THREE.SphereGeometry(0.2, 8, 8);
+    const material = new THREE.MeshBasicMaterial({
+        color: 0x00ff00,
+        emissive: 0x00ff00
+    });
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.position.copy(projectile.pos);
+    scene.add(mesh);
+    projectile.mesh = mesh;
+
+    // Add glow
+    const glowGeometry = new THREE.SphereGeometry(0.4, 8, 8);
+    const glowMaterial = new THREE.MeshBasicMaterial({
+        color: 0x00ff00,
+        transparent: true,
+        opacity: 0.4
+    });
+    const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+    glow.position.copy(projectile.pos);
+    scene.add(glow);
+    projectile.glow = glow;
+
+    projectiles.push(projectile);
+    stats.shots++;
+    shootCooldown = maxShootCooldown;
+
+    // Update ammo counter
+    document.getElementById('ammo').textContent = '∞';
+}
+
+function updateProjectiles() {
+    for (let i = projectiles.length - 1; i >= 0; i--) {
+        const proj = projectiles[i];
+        proj.age += 16.67;
+
+        // Update position
+        const movement = proj.direction.clone().multiplyScalar(proj.speed * 0.016);
+        proj.pos.add(movement);
+        proj.mesh.position.copy(proj.pos);
+        proj.glow.position.copy(proj.pos);
+
+        // Add trail
+        proj.trail.push(proj.pos.clone());
+        if (proj.trail.length > 50) proj.trail.shift();
+
+        // Check collision with enemies
+        for (let j = enemies.length - 1; j >= 0; j--) {
+            const enemy = enemies[j];
+            const dist = proj.pos.distanceTo(new THREE.Vector3(enemy.x, enemy.y, enemy.z));
+
+            if (dist < 2) {
+                // Hit!
+                enemy.health -= 25;
+                stats.hits++;
+
+                // Create explosion effect
+                createExplosion(proj.pos);
+
+                // Remove projectile
+                scene.remove(proj.mesh);
+                scene.remove(proj.glow);
+                projectiles.splice(i, 1);
+                proj = null;
+
+                // Check if enemy is dead
+                if (enemy.health <= 0) {
+                    scene.remove(enemy.mesh);
+                    enemies.splice(j, 1);
+                    stats.kills++;
+
+                    // Spawn new enemy
+                    const angle = Math.random() * Math.PI * 2;
+                    const distance = 100 + Math.random() * 50;
+                    const x = Math.cos(angle) * distance;
+                    const z = Math.sin(angle) * distance;
+                    const y = (Math.random() - 0.5) * 30;
+
+                    const group = new THREE.Group();
+                    const bodyGeom = new THREE.BoxGeometry(0.3, 0.3, 1);
+                    const bodyMat = new THREE.MeshPhongMaterial({
+                        color: 0x444444,
+                        emissive: 0x220000
+                    });
+                    const body = new THREE.Mesh(bodyGeom, bodyMat);
+                    body.castShadow = true;
+                    group.add(body);
+                    const glowLight = new THREE.PointLight(0xff3300, 0.8, 30);
+                    group.add(glowLight);
+                    group.position.set(x, y, z);
+                    scene.add(group);
+                    enemies.push({
+                        mesh: group,
+                        x, y, z,
+                        vx: (Math.random() - 0.5) * 30,
+                        vy: (Math.random() - 0.5) * 10,
+                        vz: (Math.random() - 0.5) * 30,
+                        targetChangeTimer: 0,
+                        health: 100,
+                        maxHealth: 100
+                    });
+                }
+
+                break;
+            }
+        }
+
+        // Remove old projectiles
+        if (proj && (proj.age > proj.life || proj.pos.length() > 1000)) {
+            scene.remove(proj.mesh);
+            scene.remove(proj.glow);
+            projectiles.splice(i, 1);
+        }
+    }
+}
+
+function createExplosion(pos) {
+    // Create explosion particles
+    const particleCount = 10;
+    for (let i = 0; i < particleCount; i++) {
+        const angle = (i / particleCount) * Math.PI * 2;
+        const speed = 30 + Math.random() * 50;
+
+        const particle = {
+            pos: pos.clone(),
+            vel: new THREE.Vector3(
+                Math.cos(angle) * speed,
+                (Math.random() - 0.5) * speed,
+                Math.sin(angle) * speed
+            ),
+            life: 500,
+            age: 0,
+            mesh: null
+        };
+
+        const geometry = new THREE.SphereGeometry(0.1, 4, 4);
+        const material = new THREE.MeshBasicMaterial({
+            color: 0xffff00,
+            emissive: 0xff8800
+        });
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.position.copy(particle.pos);
+        scene.add(mesh);
+        particle.mesh = mesh;
+        particles.push(particle);
+    }
+}
+
+function updateParticles() {
+    for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.age += 16.67;
+        p.pos.add(p.vel.clone().multiplyScalar(0.016));
+        p.vel.multiplyScalar(0.95);
+        p.mesh.position.copy(p.pos);
+
+        if (p.age > p.life) {
+            scene.remove(p.mesh);
+            particles.splice(i, 1);
+        }
     }
 }
 
@@ -224,6 +474,7 @@ function startGame() {
     document.getElementById('menu').classList.add('hidden');
     gameRunning = true;
     gamePaused = false;
+    document.body.requestPointerLock();
 }
 
 function togglePause() {
@@ -234,6 +485,7 @@ function togglePause() {
 function resumeGame() {
     gamePaused = false;
     document.getElementById('pauseMenu').style.display = 'none';
+    document.body.requestPointerLock();
 }
 
 function mainMenu() {
@@ -241,6 +493,7 @@ function mainMenu() {
     gamePaused = false;
     document.getElementById('pauseMenu').style.display = 'none';
     document.getElementById('menu').classList.remove('hidden');
+    document.exitPointerLock();
 }
 
 function onWindowResize() {
@@ -263,6 +516,8 @@ function updatePlayer() {
 
     if (window.playerShip) {
         window.playerShip.position.copy(playerPos);
+        window.playerShip.rotation.x = playerRotation.x;
+        window.playerShip.rotation.y = playerRotation.y;
     }
 
     // Update camera to follow player
@@ -272,6 +527,9 @@ function updatePlayer() {
 
     camera.position.lerp(new THREE.Vector3(targetX, targetY, targetZ), 0.1);
     camera.lookAt(playerPos.x, playerPos.y, playerPos.z);
+
+    // Decrease cooldown
+    if (shootCooldown > 0) shootCooldown -= 16.67;
 }
 
 function updateEnemies() {
@@ -308,6 +566,8 @@ function animate() {
     if (!gamePaused && gameRunning) {
         updatePlayer();
         updateEnemies();
+        updateProjectiles();
+        updateParticles();
     }
 
     // Rotate stars for parallax effect
@@ -328,6 +588,11 @@ function animate() {
         return dist < min.dist ? { dist, enemy: e } : min;
     }, { dist: Infinity });
     document.getElementById('distance').textContent = Math.round(nearestEnemy.dist);
+    document.getElementById('killCount').textContent = stats.kills;
+    document.getElementById('accuracy').textContent = stats.shots > 0
+        ? Math.round((stats.hits / stats.shots) * 100)
+        : 0;
+    document.getElementById('enemies').textContent = enemies.length;
 
     renderer.render(scene, camera);
 }
