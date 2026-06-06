@@ -1,1 +1,20 @@
-{\n  "name": "tie-defender-game",\n  "version": "1.0.0",\n  "description": "Interactive 3D TIE Defender space combat game",\n  "type": "module",\n  "scripts": {\n    "dev": "vite",\n    "build": "vite build",\n    "preview": "vite preview",\n    "deploy": "npm run build && netlify deploy --prod --dir=dist"\n  },\n  "dependencies": {\n    "three": "^0.128.0",\n    "cannon": "^0.20.0"\n  },\n  "devDependencies": {\n    "vite": "^4.4.0",\n    "@types/three": "^0.128.0"\n  }\n}\n
+{
+  "name": "tie-defender-game",
+  "version": "1.0.0",
+  "description": "Interactive 3D TIE Defender space combat game",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "deploy": "npm run build && netlify deploy --prod --dir=dist"
+  },
+  "dependencies": {
+    "three": "^0.128.0",
+    "cannon": "^0.20.0"
+  },
+  "devDependencies": {
+    "vite": "^4.4.0",
+    "@types/three": "^0.128.0"
+  }
+}
